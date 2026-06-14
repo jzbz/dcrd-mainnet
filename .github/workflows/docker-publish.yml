@@ -1,0 +1,94 @@
+name: Build and publish dcrd image
+
+# Builds the multi-arch (amd64 + arm64) dcrd image and publishes it to the
+# GitHub Container Registry (ghcr.io).
+#
+# Triggers:
+#   * Push to master                -> publishes :latest (+ the default version)
+#   * Push of a git tag like v2.1.5 -> publishes :v2.1.5, :2.1.5, :latest
+#   * Manual run (workflow_dispatch)-> build any dcrd version on demand
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+    inputs:
+      dcrd_version:
+        description: 'dcrd version to build (e.g. 2.1.5 -> builds git tag release-v2.1.5)'
+        required: true
+        default: '2.1.5'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/dcrd-mainnet
+  # Version built for pushes to the master branch (where no version tag exists).
+  DEFAULT_DCRD_VERSION: '2.1.5'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine dcrd version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.dcrd_version }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${DEFAULT_DCRD_VERSION}"
+          fi
+          # Strip a leading "v" if the user supplied one.
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_tag=release-v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building dcrd release-v${VERSION}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=v${{ steps.version.outputs.version }}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=dcrd-mainnet
+            org.opencontainers.image.description=Decred full node (dcrd) v${{ steps.version.outputs.version }} for mainnet, built from source on a scratch base.
+            org.opencontainers.image.vendor=Decred
+            org.opencontainers.image.licenses=ISC
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          build-args: |
+            DCRD_BUILD_TAG=${{ steps.version.outputs.build_tag }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

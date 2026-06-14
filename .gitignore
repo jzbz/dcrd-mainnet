@@ -1,0 +1,11 @@
+# Local data dirs that may appear when testing
+.dcrd/
+.dcrctl/
+decred-data/
+
+# Editor / OS cruft
+*~
+.DS_Store
+
+# Local tooling
+.claude/

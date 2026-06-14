@@ -1,0 +1,27 @@
+# Decred full node (dcrd) on mainnet.
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f
+#   docker compose exec dcrd dcrctl getblockchaininfo
+#
+# The named volume below is created automatically. dcrd runs as UID:GID
+# 10000:10000; Docker initializes the volume ownership from the image, so no
+# manual chown is needed when using a named volume (unlike a host bind mount).
+services:
+  dcrd:
+    image: ghcr.io/jzbz/dcrd-mainnet:latest
+    container_name: dcrd
+    restart: unless-stopped
+    read_only: true
+    stop_grace_period: 60s
+    # Add the service name to the RPC TLS certificate for remote RPC clients.
+    command: ["--altdnsnames", "dcrd"]
+    ports:
+      - "9108:9108"   # mainnet peer-to-peer
+      # - "9109:9109" # mainnet JSON-RPC (uncomment to expose remotely)
+    volumes:
+      - decred-data:/home/decred
+
+volumes:
+  decred-data:
