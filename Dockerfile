@@ -10,7 +10,7 @@
 #    To update by hand, run `docker pull golang:<new version>` and copy the
 #    printed digest here. Otherwise Dependabot opens the PR automatically and
 #    the PR build validates it before merge.
-FROM golang:1.25.4-alpine3.22@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb AS builder
+FROM golang:1.26.4-alpine3.22@sha256:727cfc3c40be55cd1bc9a4a059406b28a059857e3be752aa9d09531e12c20c56 AS builder
 RUN apk add --no-cache git ca-certificates upx
 
 # Empty directory to be copied into place in the production image since it will
