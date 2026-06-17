@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Keep the GitHub Actions used by the publish workflow up to date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+
+  # Keep the golang builder base image (pinned by tag + digest in the
+  # Dockerfile) up to date. Dependabot opens a PR bumping both the tag and the
+  # digest; the PR build validates it before it can be merged.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"

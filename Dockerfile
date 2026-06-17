@@ -3,13 +3,14 @@
 ###############
 
 # Basic Go environment with git, SSL CA certs, and upx.
-# The image below is golang:1.25.4-alpine3.22 (linux/amd64)
-# It's pulled by the digest (immutable id) to avoid supply-chain attacks.
+# Pinned by digest (immutable id) to avoid supply-chain attacks. The tag is
+# kept alongside the digest purely for readability and so that Dependabot can
+# track the base image and open update PRs; Docker always resolves by digest.
 # Maintainer Note:
-#    To update to a new digest, you must first manually pull the new image:
-#    `docker pull golang:<new version>`
-#    Docker will print the digest of the new image after the pull has finished.
-FROM golang@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb AS builder
+#    To update by hand, run `docker pull golang:<new version>` and copy the
+#    printed digest here. Otherwise Dependabot opens the PR automatically and
+#    the PR build validates it before merge.
+FROM golang:1.25.4-alpine3.22@sha256:d3f0cf7723f3429e3f9ed846243970b20a2de7bae6a5b66fc5914e228d831bbb AS builder
 RUN apk add --no-cache git ca-certificates upx
 
 # Empty directory to be copied into place in the production image since it will

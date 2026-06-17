@@ -6,17 +6,29 @@ name: Build and publish dcrd image
 # Triggers:
 #   * Push to master                -> publishes :latest (+ the default version)
 #   * Push of a git tag like v2.1.5 -> publishes :v2.1.5, :2.1.5, :latest
+#   * Pull request to master        -> builds (amd64 only) to validate, no push
 #   * Manual run (workflow_dispatch)-> build any dcrd version on demand
 on:
   push:
     branches: [ master ]
     tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ master ]
   workflow_dispatch:
     inputs:
       dcrd_version:
         description: 'dcrd version to build (e.g. 2.1.5 -> builds git tag release-v2.1.5)'
         required: true
         default: '2.1.5'
+      mark_latest:
+        description: 'Also move the :latest tag to this build'
+        type: boolean
+        default: false
+
+# Only one build per ref at a time; a newer push supersedes an in-flight one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -25,7 +37,7 @@ env:
   DEFAULT_DCRD_VERSION: '2.1.5'
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,21 +46,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Determine dcrd version
-        id: version
+      - name: Determine build parameters
+        id: params
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          EVENT="${{ github.event_name }}"
+
+          # Resolve which dcrd version to build.
+          if [ "$EVENT" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.dcrd_version }}"
           elif [ "${{ github.ref_type }}" = "tag" ]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
             VERSION="${DEFAULT_DCRD_VERSION}"
           fi
-          # Strip a leading "v" if the user supplied one.
-          VERSION="${VERSION#v}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "build_tag=release-v${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Building dcrd release-v${VERSION}"
+          VERSION="${VERSION#v}"   # tolerate a leading "v"
+
+          # Pull requests only validate the build; everything else publishes.
+          if [ "$EVENT" = "pull_request" ]; then
+            PUSH=false
+            PLATFORMS="linux/amd64"
+          else
+            PUSH=true
+            PLATFORMS="linux/amd64,linux/arm64"
+          fi
+
+          # Move :latest only for branch/tag pushes (always the newest), or for
+          # a manual run that explicitly opts in. This prevents a manual build
+          # of an older version from clobbering :latest.
+          LATEST=false
+          if [ "$EVENT" = "push" ]; then
+            LATEST=true
+          elif [ "$EVENT" = "workflow_dispatch" ] && [ "${{ github.event.inputs.mark_latest }}" = "true" ]; then
+            LATEST=true
+          fi
+
+          {
+            echo "version=${VERSION}"
+            echo "build_tag=release-v${VERSION}"
+            echo "push=${PUSH}"
+            echo "platforms=${PLATFORMS}"
+            echo "latest=${LATEST}"
+          } >> "$GITHUB_OUTPUT"
+          echo "dcrd release-v${VERSION} | push=${PUSH} | platforms=${PLATFORMS} | latest=${LATEST}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -57,6 +96,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to the GitHub Container Registry
+        if: steps.params.outputs.push == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -69,12 +109,12 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=v${{ steps.version.outputs.version }}
-            type=raw,value=latest
+            type=raw,value=${{ steps.params.outputs.version }}
+            type=raw,value=v${{ steps.params.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.params.outputs.latest }}
           labels: |
             org.opencontainers.image.title=dcrd-mainnet
-            org.opencontainers.image.description=Decred full node (dcrd) v${{ steps.version.outputs.version }} for mainnet, built from source on a scratch base.
+            org.opencontainers.image.description=Decred full node (dcrd) v${{ steps.params.outputs.version }} for mainnet, built from source on a scratch base.
             org.opencontainers.image.vendor=Decred
             org.opencontainers.image.licenses=ISC
 
@@ -83,11 +123,11 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
+          platforms: ${{ steps.params.outputs.platforms }}
+          push: ${{ steps.params.outputs.push }}
           provenance: false
           build-args: |
-            DCRD_BUILD_TAG=${{ steps.version.outputs.build_tag }}
+            DCRD_BUILD_TAG=${{ steps.params.outputs.build_tag }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

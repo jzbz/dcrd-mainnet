@@ -1,5 +1,13 @@
+# The image is built from source cloned inside the builder stage; the only file
+# the Dockerfile needs from this context is contrib/docker/entrypoint/entrypoint.go.
+# Everything below is excluded to keep the build context tiny.
 *~
 vendor
 .git
 .github
+.gitignore
+.dockerignore
 README.md
+LICENSE
+Makefile
+docker-compose.yml

@@ -147,27 +147,43 @@ Exposed ports: `9108`/`9109` (mainnet p2p/rpc), `19108`/`19109` (testnet),
 
 ## Building locally
 
-```sh
-# Builds dcrd v2.1.5 by default.
-docker build -t dcrd-mainnet .
+A [`Makefile`](Makefile) wraps the common Docker commands. Run `make help` to
+see every target.
 
-# Build a different version:
+```sh
+make build                 # build a local image for your host (dcrd v2.1.5)
+make build VERSION=2.1.4   # build a different version
+make run                   # create the data volume and start a node
+make logs                  # follow the node logs
+make ctl CMD=getblockchaininfo
+make push                  # build multi-arch and push to the registry
+```
+
+Equivalent raw Docker commands, if you prefer:
+
+```sh
+docker build -t dcrd-mainnet .
 docker build --build-arg DCRD_BUILD_TAG=release-v2.1.4 -t dcrd-mainnet .
 ```
 
 ## Publishing a new version
 
 The [workflow](.github/workflows/docker-publish.yml) publishes to ghcr.io on
-push to `master` and on version tags. To cut a new release:
+push to `master` and on version tags. Pull requests build the image (amd64
+only) to validate changes but do not push. To cut a new release:
 
 ```sh
-# Option A: push a git tag (recommended)
+# Option A: push a git tag (recommended). Publishes :v2.1.6, :2.1.6, and :latest.
 git tag v2.1.6 && git push origin v2.1.6
 
-# Option B: run the workflow manually from the Actions tab and enter the version,
-# or via the CLI:
-gh workflow run docker-publish.yml -f dcrd_version=2.1.6
+# Option B: run the workflow manually from the Actions tab, or via the CLI.
+# Manual runs do NOT move :latest unless you pass mark_latest=true, so you can
+# safely (re)build an older version without clobbering :latest.
+gh workflow run docker-publish.yml -f dcrd_version=2.1.6 -f mark_latest=true
 ```
+
+The Dockerfile's golang base image and the workflow's actions are kept current
+by [Dependabot](.github/dependabot.yml).
 
 ## Credits & license
 
