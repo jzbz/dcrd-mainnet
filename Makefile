@@ -9,13 +9,13 @@
 #   make help               # list all targets
 #
 # Override any variable on the command line, e.g.:
-#   make build VERSION=2.1.4
+#   make build VERSION=2.1.5
 #   make push  IMAGE=ghcr.io/youruser/dcrd-mainnet
 
 # ---- Configuration -------------------------------------------------------
 
 # dcrd version to build. Maps to the git tag release-v$(VERSION).
-VERSION     ?= 2.1.5
+VERSION     ?= 2.1.6
 BUILD_TAG   ?= release-v$(VERSION)
 
 # Image reference (without tag) to build/push.

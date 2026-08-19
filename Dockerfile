@@ -34,10 +34,10 @@ RUN adduser \
 # Build dcrd and other commands it provides.
 #
 # DCRD_BUILD_TAG selects the git tag/branch of dcrd to build.  It defaults to
-# the v2.1.5 release.  Override with `--build-arg DCRD_BUILD_TAG=release-vX.Y.Z`
+# the v2.1.6 release.  Override with `--build-arg DCRD_BUILD_TAG=release-vX.Y.Z`
 # to build a different version.
 WORKDIR /go/src/github.com/decred/dcrd
-ARG DCRD_BUILD_TAG=release-v2.1.5
+ARG DCRD_BUILD_TAG=release-v2.1.6
 RUN git clone --branch ${DCRD_BUILD_TAG} -c advice.detachedHead=false https://github.com/decred/dcrd . && \
     CGO_ENABLED=0 GOOS=linux \
     go install -trimpath -tags safe,netgo,timetzdata \
