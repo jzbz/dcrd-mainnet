@@ -183,7 +183,9 @@ gh workflow run docker-publish.yml -f dcrd_version=2.1.7 -f mark_latest=true
 ```
 
 The Dockerfile's golang base image and the workflow's actions are kept current
-by [Dependabot](.github/dependabot.yml).
+by [Dependabot](.github/dependabot.yml). Dependabot keeps the golang tag's
+`-alpineX.Y` suffix, so moving the builder to a newer Alpine release is a
+manual edit of the `FROM` line (tag and digest).
 
 ## Credits & license
 
