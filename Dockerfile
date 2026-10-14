@@ -13,7 +13,7 @@
 #    Dependabot keeps the tag's -alpineX.Y suffix, so once golang stops
 #    publishing that suffix (as it did for alpine3.22 after 1.26.4), moving to
 #    the next Alpine release has to be done by hand.
-FROM golang:1.26.8-alpine3.24@sha256:8ac98ca534ac3f51e1f420a1dd2c15e74c75cfa0f23f3ad27eb5d7236c349a0c AS builder
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 RUN apk add --no-cache git ca-certificates upx
 
 # Empty directory to be copied into place in the production image since it will
