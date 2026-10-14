@@ -5,7 +5,7 @@ name: Build and publish dcrd image
 #
 # Triggers:
 #   * Push to master                -> publishes :latest (+ the default version)
-#   * Push of a git tag like v2.1.6 -> publishes :v2.1.6, :2.1.6, :latest
+#   * Push of a git tag like v2.1.7 -> publishes :v2.1.7, :2.1.7, :latest
 #   * Pull request to master        -> builds (amd64 only) to validate, no push
 #   * Manual run (workflow_dispatch)-> build any dcrd version on demand
 on:
@@ -17,9 +17,9 @@ on:
   workflow_dispatch:
     inputs:
       dcrd_version:
-        description: 'dcrd version to build (e.g. 2.1.6 -> builds git tag release-v2.1.6)'
+        description: 'dcrd version to build (e.g. 2.1.7 -> builds git tag release-v2.1.7)'
         required: true
-        default: '2.1.6'
+        default: '2.1.7'
       mark_latest:
         description: 'Also move the :latest tag to this build'
         type: boolean
@@ -34,7 +34,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/dcrd-mainnet
   # Version built for pushes to the master branch (where no version tag exists).
-  DEFAULT_DCRD_VERSION: '2.1.6'
+  DEFAULT_DCRD_VERSION: '2.1.7'
 
 jobs:
   build:

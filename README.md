@@ -9,7 +9,7 @@ A Docker image for running a [Decred](https://decred.org) full node
 
 This is a community-maintained equivalent of the original
 [`decred/dcrd-mainnet`](https://hub.docker.com/r/decred/dcrd-mainnet) image on
-Docker Hub, updated to **dcrd v2.1.6**. The image is built straight from
+Docker Hub, updated to **dcrd v2.1.7**. The image is built straight from
 Decred's own [official, security-hardened Docker
 setup](https://github.com/decred/dcrd/tree/master/contrib/docker).
 
@@ -34,7 +34,7 @@ Security properties:
 
 ## Supported tags & architectures
 
-- Tags: `latest`, `v2.1.6`, `2.1.6`
+- Tags: `latest`, `v2.1.7`, `2.1.7`
 - Architectures: `linux/amd64`, `linux/arm64` (works on x86-64 servers and on
   ARM such as Raspberry Pi 4/5, Apple Silicon, and AWS Graviton)
 
@@ -151,8 +151,8 @@ A [`Makefile`](Makefile) wraps the common Docker commands. Run `make help` to
 see every target.
 
 ```sh
-make build                 # build a local image for your host (dcrd v2.1.6)
-make build VERSION=2.1.5   # build a different version
+make build                 # build a local image for your host (dcrd v2.1.7)
+make build VERSION=2.1.6   # build a different version
 make run                   # create the data volume and start a node
 make logs                  # follow the node logs
 make ctl CMD=getblockchaininfo
@@ -163,7 +163,7 @@ Equivalent raw Docker commands, if you prefer:
 
 ```sh
 docker build -t dcrd-mainnet .
-docker build --build-arg DCRD_BUILD_TAG=release-v2.1.5 -t dcrd-mainnet .
+docker build --build-arg DCRD_BUILD_TAG=release-v2.1.6 -t dcrd-mainnet .
 ```
 
 ## Publishing a new version
@@ -173,13 +173,13 @@ push to `master` and on version tags. Pull requests build the image (amd64
 only) to validate changes but do not push. To cut a new release:
 
 ```sh
-# Option A: push a git tag (recommended). Publishes :v2.1.7, :2.1.7, and :latest.
-git tag v2.1.7 && git push origin v2.1.7
+# Option A: push a git tag (recommended). Publishes :v2.1.8, :2.1.8, and :latest.
+git tag v2.1.8 && git push origin v2.1.8
 
 # Option B: run the workflow manually from the Actions tab, or via the CLI.
 # Manual runs do NOT move :latest unless you pass mark_latest=true, so you can
 # safely (re)build an older version without clobbering :latest.
-gh workflow run docker-publish.yml -f dcrd_version=2.1.7 -f mark_latest=true
+gh workflow run docker-publish.yml -f dcrd_version=2.1.8 -f mark_latest=true
 ```
 
 The Dockerfile's golang base image and the workflow's actions are kept current
